@@ -14,45 +14,41 @@ import java.util.List;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+
 public class SchduleWork {
 
-	public static void main(String[] args) throws IOException {
-		URL address=new URL("https://jsonplaceholder.typicode.com/users");
 
-		InputStream in=address.openStream();
+	public static void main(String[] args) throws IOException, ClassNotFoundException, SQLException {
+		String address="https://jsonplaceholder.typicode.com/users";
+		URL url=new URL(address);
+		InputStream in=url.openStream();
 		int read=0;
 		String buf="";
 		while((read=in.read())!=-1) {
+			//System.out.print((char)read);
 			buf+=(char)read;
 		}
-		//buf = buf.replaceAll("\\s*", "");
 		System.out.println(buf);
-		
-		
+		//buf에 있는 문자열을 자바 객체로 변환
 		ObjectMapper mapper = new ObjectMapper();
-		//id가 접근오류가 발생하는 이유는 User객체의 변수들이 private일 때 발생하므로 Public로 변경해야한다.
-		//접근을 set함수가 아닌 .속성으로 접근하도록 허용해야 한다.
-		List<User> users = mapper.readValue(buf, new TypeReference<List<User>>() {});
-		//User[] users = mapper.readValue(buf, User[].class);
-
+		List<User> users
+		=mapper.readValue(buf, new TypeReference<List<User>>() {});
 		System.out.println(users);
-		
-		//데이터베이스 생성하기(아래 코드가 있음)
-		//데이터베이스 접속하는 객체를 만들어 입력
+		//데이터베이스에 입력
 		insertUsers(users);
-
 	}
-	
-	private static void insertUsers(List<User> list) throws ClassNotFoundException, SQLException {
-		Class.forName("oracle.jdbc.driver.OracleDriver");
+
+	private static void insertUsers(List<User> users) throws ClassNotFoundException, SQLException {
+		Class.forName("oracle.jdbc.driver.OracleDriver"); //라이브러리 추가
 		try(Connection conn=DriverManager.getConnection(
 				"jdbc:oracle:thin:@localhost:1521:xe"
 				,"test","1111")){
 			conn.setAutoCommit(false);
+			//각각의 테이블에 시퀸스 작성하여 시퀸스명.nextval
 			String geoSql="insert into geo(id,lat,lng) values(?,?,?)";
-			String addressSql="insert into address(id,street, suite, city,zipcode,geo_id) values(?,?,?,?,?,?)";
-			String companySql="insert into company(id,name,catchPhrase,bs) values(?,?,?,?)";
-			String userSql="insert into users(id,name,username,email,phone,website,address_id,company_id) values(?,?,?,?,?,?,?,?)";
+			String addressSql="insert into address(id,street, suite, city,zipcode) values(?,?,?,?,?)";
+			String companySql="insert into company(id,name,catch_phrase,bs) values(?,?,?,?)"; //필드명주의
+			String userSql="insert into users(id,name,username,email,phone,website) values(?,?,?,?,?,?)";
 			
 			//user의 id를 제외하고는 address, company, geo에 id는 자동시퀸스생성
 			//입력순서는 역으로 처리해야한다.(geo-address-company-user)
@@ -67,16 +63,15 @@ public class SchduleWork {
 				String companyId="select company_seq.nextval from dual";
 				Statement seqStat=conn.createStatement();
 				
-				for(User user:list) {
+				for(User user:users) {
 					//Geo에 id생성
 					ResultSet rsGeo=seqStat.executeQuery(geoId);
 					rsGeo.next();
 					int geoid=rsGeo.getInt(1); //geo의 id추출
-					
 					//Geo테이블삽입
-					geops.setInt(1,geoid);
-					geops.setString(2, user.address.geo.lat);
-					geops.setString(3, user.address.geo.lng);
+					geops.setInt(1,geoid); //새로입력
+					geops.setString(2, user.getAddress().getGeo().getLat());
+					geops.setString(3, user.getAddress().getGeo().getLng());
 					geops.executeUpdate();
 					
 					//address id생성/테이블입력
@@ -85,13 +80,12 @@ public class SchduleWork {
 					int addressid=rsAddress.getInt(1);
 					
 					//insert into address
-					//(id,street, suite, city,zipcode,geo_id) values(?,?,?,?,?,?)
+					//(id,street, suite, city,zipcode) values(?,?,?,?,?)
 					addressps.setInt(1, addressid);
 					addressps.setString(2,user.getAddress().getStreet());
 					addressps.setString(3,user.getAddress().getSuite());
 					addressps.setString(4,user.getAddress().getCity());
 					addressps.setString(5,user.getAddress().getZipcode());
-					addressps.setInt(6,geoid);
 					addressps.executeUpdate();
 					
 					//company id생성/테이블입력
@@ -107,23 +101,46 @@ public class SchduleWork {
 					
 					//user 테이블입력
 					//insert into users
-					//(id,name,username,email,phone,website,address_id,company_id) values(?,?,?,?,?,?,?,?)";
+					//(id,name,username,email,phone,website) values(?,?,?,?,?,?)";
 					userps.setInt(1,user.getId());
 					userps.setString(2,user.getName());
 					userps.setString(3,user.getUsername());
 					userps.setString(4,user.getEmail());
 					userps.setString(5,user.getPhone());
 					userps.setString(6,user.getWebsite());
-					userps.setInt(7,addressid);
-					userps.setInt(8,companyid);
 					userps.executeUpdate();
+					
+					//->geo테이블에 address외래키 추가
+					PreparedStatement foreidpre=null;
+					foreidpre=conn.prepareStatement("update geo set address_id=? where id=?");
+					foreidpre.setInt(1, addressid);
+					foreidpre.setInt(2, geoid);
+					foreidpre.executeUpdate();
+					
+					//->address테이블에 userid 외래키 추가
+					foreidpre=conn.prepareStatement("update address set user_id=? where id=?");
+					foreidpre.setInt(1, user.getId());
+					foreidpre.setInt(2, addressid);
+					foreidpre.executeUpdate();
+					
+					//->company테이블에 userid 외래키 추가
+					foreidpre=conn.prepareStatement("update company set user_id=? where id=?");
+					foreidpre.setInt(1, user.getId());
+					foreidpre.setInt(2, companyid);
+					foreidpre.executeUpdate();
+					
 				}
 				//반복문으로 입력 후 commit처리
 				conn.commit();
 				System.out.println("모든 데이터 정상입력");
 				//모든 자원에 대한 반환
 			}catch (Exception e) {
-				conn.rollback();
+				try {
+					conn.rollback();
+				} catch (SQLException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
 				e.printStackTrace();
 			}
 			
