@@ -1,0 +1,314 @@
+#웹브라우저에서 실행
+https://jsonplaceholder.typicode.com/users
+제약조건없이 무조건 실행
+하지만 restapi를 javascript에서 사용할 경우 문제발생
+원인은 자신의 사이트와 동일한 사이트가 아님
+이를 해결하는 방법은
+1)cros를 서버에서 허용
+2)proxy를 사용
+3)프로그램언어를 이용하여 로컬에서 처리
+
+3)번을 이용하 파싱
+사전적으로 해야하는 작업 구조파악
+
+USER테이블이 모든 객체를 취합하는 테이블이고, 하부에 ADDRESS, GEO, COMPANY가 존재함
+하지만 USERS객체에는 하위 3개 테이블의 정보가 존재하지 않음
+하위의 3개 테이블안에 USER테이블의 외래키가 존재하고 객체가 아닌 USER_ID를 가지고 있음
+하지만 자바 객체(USERS)는 json의 구조와 일치되게 구성되어 있으며 id가 아닌 객체로서 참조를 하고 있음
+결론:json==java객체, 테이블은 반대로 구성되어 있음
+
+public class User {
+	public int id;
+	public String name;
+	public String username;
+	public String email;
+	public Address address;
+	public String phone;
+	public String website;
+	public Company company;
+}
+
+CREATE TABLE USERS (
+  ID NUMBER PRIMARY KEY,
+  NAME VARCHAR2(100),
+  USERNAME VARCHAR2(100),
+  EMAIL VARCHAR2(100),
+  PHONE VARCHAR2(50),
+  WEBSITE VARCHAR2(100)
+);
+
+#user테이블은 address와 company를 참조한다.(하지만 테이블에서는 외래키로 참조)
+#address 테이블은 user테이블의 id를 참조해야한다.
+#company 테이블은 user테이블의 id를 참조해야한다.
+
+#address 테이블은 geo를 참조한다.
+geo테이블은 address의 id를 참조해야한다.
+
+CREATE TABLE ADDRESS (
+  ID NUMBER PRIMARY KEY,
+  USER_ID NUMBER REFERENCES USERS(ID),
+  STREET VARCHAR2(100),
+  SUITE VARCHAR2(100),
+  CITY VARCHAR2(100),
+  ZIPCODE VARCHAR2(20)
+);
+
+CREATE TABLE COMPANY (
+  ID NUMBER PRIMARY KEY,
+  USER_ID NUMBER REFERENCES USERS(ID),
+  NAME VARCHAR2(100),
+  CATCH_PHRASE VARCHAR2(255),
+  BS VARCHAR2(255)
+);
+
+//address안에  geo가 있으므로 참조한다.
+CREATE TABLE GEO (
+  ID NUMBER PRIMARY KEY,
+  ADDRESS_ID NUMBER REFERENCES ADDRESS(ID),
+  LAT VARCHAR2(20),
+  LNG VARCHAR2(20)
+);
+
+#시퀸스 생성
+create sequence geo_seq start with 1 increment by 1;
+create sequence address_seq start with 1 increment by 1;
+create sequence company_seq start with 1 increment by 1;
+
+drop sequence get_seq;
+drop sequence address_seq;
+drop sequence company_seq;
+
+select geo_seq.nextval from dual;
+
+#자바에서 입력을 넣을 때 순서 확인
+첫번째 객체를 넣는 경우 생각해볼 것
+geo데이터입력(시퀸스id, lat, lng) 
+address데이터입력(시퀸스id생성, street, suite,city,zipcode)
+company데이터 입력(시퀸스로 id생성,name,catchPhrase,bs)
+users데이터입력(id,name,username,phone,website) 
+company, address테이블에 userid에 대한 외래키입력
+
+->geo테이블에 address외래키 추가
+->address테이블에 userid 외래키 추가
+->company테이블에 userid 외래키 추가
+
+{
+    "id": 1,
+    "name": "Leanne Graham",
+    "username": "Bret",
+    "email": "Sincere@april.biz",
+    "address": {
+      "street": "Kulas Light",
+      "suite": "Apt. 556",
+      "city": "Gwenborough",
+      "zipcode": "92998-3874",
+      "geo": {
+        "lat": "-37.3159",
+        "lng": "81.1496"
+      }
+    },
+    "phone": "1-770-736-8031 x56442",
+    "website": "hildegard.org",
+    "company": {
+      "name": "Romaguera-Crona",
+      "catchPhrase": "Multi-layered client-server neural-net",
+      "bs": "harness real-time e-markets"
+    }
+  }
+
+#자바코드로 api를 데이터 변환하여 자신의 데이터베이스에 입력
+package work2;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.List;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+public class Main {
+
+	public static void main(String[] args) throws IOException, ClassNotFoundException, SQLException {
+		String address="https://jsonplaceholder.typicode.com/users";
+		URL url=new URL(address);
+		InputStream in=url.openStream();
+		int read=0;
+		String buf="";
+		while((read=in.read())!=-1) {
+			//System.out.print((char)read);
+			buf+=(char)read;
+		}
+		System.out.println(buf);
+		//buf에 있는 문자열을 자바 객체로 변환
+		ObjectMapper mapper = new ObjectMapper();
+		List<User> users
+		=mapper.readValue(buf, new TypeReference<List<User>>() {});
+		System.out.println(users);
+		//데이터베이스에 입력
+		insertUsers(users);
+	}
+
+	private static void insertUsers(List<User> users) throws ClassNotFoundException, SQLException {
+		Class.forName("oracle.jdbc.driver.OracleDriver"); //라이브러리 추가
+		try(Connection conn=DriverManager.getConnection(
+				"jdbc:oracle:thin:@localhost:1521:xe"
+				,"test","1111")){
+			conn.setAutoCommit(false);
+			//각각의 테이블에 시퀸스 작성하여 시퀸스명.nextval
+			String geoSql="insert into geo(id,lat,lng) values(?,?,?)";
+			String addressSql="insert into address(id,street, suite, city,zipcode) values(?,?,?,?,?)";
+			String companySql="insert into company(id,name,catch_phrase,bs) values(?,?,?,?)"; //필드명주의
+			String userSql="insert into users(id,name,username,email,phone,website) values(?,?,?,?,?,?)";
+			
+			//user의 id를 제외하고는 address, company, geo에 id는 자동시퀸스생성
+			//입력순서는 역으로 처리해야한다.(geo-address-company-user)
+			try(
+			PreparedStatement geops=conn.prepareStatement(geoSql);
+			PreparedStatement addressps=conn.prepareStatement(addressSql);
+			PreparedStatement companyps=conn.prepareStatement(companySql);
+			PreparedStatement userps=conn.prepareStatement(userSql);
+			){
+				String geoId="select geo_seq.nextval from dual";
+				String addressId="select address_seq.nextval from dual";
+				String companyId="select company_seq.nextval from dual";
+				Statement seqStat=conn.createStatement();
+				
+				for(User user:users) {
+					//Geo에 id생성
+					ResultSet rsGeo=seqStat.executeQuery(geoId);
+					rsGeo.next();
+					int geoid=rsGeo.getInt(1); //geo의 id추출
+					//Geo테이블삽입
+					geops.setInt(1,geoid); //새로입력
+					geops.setString(2, user.getAddress().getGeo().getLat());
+					geops.setString(3, user.getAddress().getGeo().getLng());
+					geops.executeUpdate();
+					
+					//address id생성/테이블입력
+					ResultSet rsAddress=seqStat.executeQuery(addressId);
+					rsAddress.next();
+					int addressid=rsAddress.getInt(1);
+					
+					//insert into address
+					//(id,street, suite, city,zipcode) values(?,?,?,?,?)
+					addressps.setInt(1, addressid);
+					addressps.setString(2,user.getAddress().getStreet());
+					addressps.setString(3,user.getAddress().getSuite());
+					addressps.setString(4,user.getAddress().getCity());
+					addressps.setString(5,user.getAddress().getZipcode());
+					addressps.executeUpdate();
+					
+					//company id생성/테이블입력
+					ResultSet rsCompany=seqStat.executeQuery(companyId);
+					rsCompany.next();
+					int companyid=rsCompany.getInt(1);
+					//insert into company(id,name,catchPhrase,bs) values(?,?,?,?)
+					companyps.setInt(1, companyid);
+					companyps.setString(2,user.getCompany().getName());
+					companyps.setString(3,user.getCompany().getCatchPhrase());
+					companyps.setString(4,user.getCompany().getBs());
+					companyps.executeUpdate();
+					
+					//user 테이블입력
+					//insert into users
+					//(id,name,username,email,phone,website) values(?,?,?,?,?,?)";
+					userps.setInt(1,user.getId());
+					userps.setString(2,user.getName());
+					userps.setString(3,user.getUsername());
+					userps.setString(4,user.getEmail());
+					userps.setString(5,user.getPhone());
+					userps.setString(6,user.getWebsite());
+					userps.executeUpdate();
+					
+					//->geo테이블에 address외래키 추가
+					PreparedStatement foreidpre=null;
+					foreidpre=conn.prepareStatement("update geo set address_id=? where id=?");
+					foreidpre.setInt(1, addressid);
+					foreidpre.setInt(2, geoid);
+					foreidpre.executeUpdate();
+					
+					//->address테이블에 userid 외래키 추가
+					foreidpre=conn.prepareStatement("update address set user_id=? where id=?");
+					foreidpre.setInt(1, user.getId());
+					foreidpre.setInt(2, addressid);
+					foreidpre.executeUpdate();
+					
+					//->company테이블에 userid 외래키 추가
+					foreidpre=conn.prepareStatement("update company set user_id=? where id=?");
+					foreidpre.setInt(1, user.getId());
+					foreidpre.setInt(2, companyid);
+					foreidpre.executeUpdate();
+					
+				}
+				//반복문으로 입력 후 commit처리
+				conn.commit();
+				System.out.println("모든 데이터 정상입력");
+				//모든 자원에 대한 반환
+			}catch (Exception e) {
+				try {
+					conn.rollback();
+				} catch (SQLException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				e.printStackTrace();
+			}
+			
+		}
+		
+	}
+
+}
+--------------------------db화 시키는 작업 완료------------------
+##restapi전체에서 서비스제공하는 범위를 정해서 로드
+public class User {
+	private int id;
+	private String name;
+	private String username;
+	private String email;
+	private Address address;
+	private String phone;
+	private String website;
+	private Company company;
+}
+
+public class GenUser {
+	private int id;
+	private String name;
+	private String username;
+	private String email;
+	private String website;
+}
+
+#GenUser사용할 수 있는 restapi작성(데이터만 제공)
+restapi주소 : http://mywebpage.com/genusers
+[{
+    "id": 1,
+    "name": "Leanne Graham",
+    "username": "Bret",
+    "email": "Sincere@april.biz",
+    "website": "hildegard.org",
+ }, ..........
+]
+
+#자바스크립트를 이용하여 UI환경을 제공한 서비스 실행(HTML)
+<button onclick="myrestapi()">서비스 제공</button>
+<script>
+function myrestapi(){
+$.ajax({
+url:"http://mywebpage.com/genusers",
+type:"get",
+success:function(response){
+document.getElementById("main").innerHTML=response;
+}
+});
+}
+</script>
+<div id="main">화면구현</div>
