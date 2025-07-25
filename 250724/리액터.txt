@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script
+      src="https://unpkg.com/react@18/umd/react.development.js"
+      crossorigin
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
+      crossorigin
+    ></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
+  <body>
+    <div id="mydiv">이 태그안에서 본인이 작성한 코드가 표시/시작점</div>
+    <script type="text/babel">
+      // <Hello></Hello> -> <Hello />
+      //Hello() -> <Hello />
+      function Hello() {
+        return <h1>Hello World!</h1>;
+      }
+      function Intro(){
+        return <div><label>name</label><p>나의 이름은 xxxx입니다.</p></div>;
+      }
+      const container = document.getElementById("mydiv");
+      const root = ReactDOM.createRoot(container);
+      root.render(<Hello /><Intro />); //렌더링 : 동작시키다. -> Hello tag를 root에 표시(표현)하라
+    </script>
+  </body>
+</html>
+-----------------------------------
+변수를 통해 값 전달하기
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script
+      src="https://unpkg.com/react@18/umd/react.development.js"
+      crossorigin
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
+      crossorigin
+    ></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
+  <body>
+    <div id="mydiv">이 태그안에서 본인이 작성한 코드가 표시/시작점</div>
+    <script type="text/babel">
+      // <Hello></Hello> -> <Hello />
+      //Hello() -> <Hello />
+      function Hello() {
+        name = "hong kildong";
+        return (
+          <div>
+            <h1>Hello World!</h1>
+            <Intro message={name} />
+          </div>
+        );
+      }
+      function Intro(obj) {
+        return (
+          <div>
+            <label>name</label>
+            <p>나의 이름은 {obj.message}입니다.</p>
+          </div>
+        );
+      }
+      const container = document.getElementById("mydiv");
+      const root = ReactDOM.createRoot(container);
+      root.render(<Hello message="kim kil dong"/>); //렌더링 : 동작시키다. -> Hello tag를 root에 표시(표현)하라
+      //결론)함수는 태그로 변환되고 리턴값은 단일태그로 사용가능하고
+      //여러태그를 사용하고자 할 경우 하나의 태그안에 다른 태그들을 포함하여야 한다.
+    </script>
+  </body>
+</html>
+
+--------------------------------------------------------------
+
+npx create-react-app myapp
+cd myapp
+cd npm start
+
+------------------------------------
+src -> App.js -> 함수를 태그로 변경하는 코드작성 -> 태그를 사용할 수 export
+src -> index.js가 실행하여 index.html파일이 실행(***********)
+public -> index.html <div id="root"></div> -> 최종실행
+--------------------------------------------
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import './index.css';
+import Hello from './Hello';
+import reportWebVitals from './reportWebVitals';
+
+/*
+let id = 'admin'; //쿠키로부터 들고온 값이라고 가정
+const mytag = <div>
+  아이디:<input type='text' value={id} /><p></p>
+  패스워드:<input type='password' /><p></p>
+  <div>{id}로그인중......</div>
+</div>
+const root = ReactDOM.createRoot(document.getElementById('root'));
+//root.render(<mytag />); ->오류발생
+root.render(mytag);
+*/
+
+const myElement = React.createElement('h1', {}, 'I do not use JSX!');
+let data='I do not use JSX!';
+const myElement2 = <h1>{data}</h1>
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(myElement2);
+---------------------------------------------
+경로를 찾아서 처리하기
+코드 작성 후 오류 : import { BrowserRouter, Routes, Route } from "react-router-dom";
+서버 중지 후 에 npm install react-router-dom;
+패키지 설치 오류 발생시 npm audit fix 또는 npm audit fix --force
+------------------------------------
+react레이아웃 활용
+<BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Home />} />
+          <Route path="blogs" element={<Blogs />} />
+          <Route path="contact" element={<Contact />} />
+          <Route path="*" element={<NoPage />} />
+        </Route>
+      </Routes>
+</BrowserRouter>
+
+---------------------------------------------
+<Route>안에 <Route>태그가 존재하므로 Laout을 우선 적용하고
+url에 따라 해당 element를 <Outlet>에 적용하여 처리하는 방식
+
+import { Outlet, Link } from "react-router-dom";
+
+const Layout = () => {
+  return (
+    <>
+      <nav>
+        <ul>
+          <li>
+            <Link to="/">Home</Link>
+          </li>
+          <li>
+            <Link to="/blogs">Blogs</Link>
+          </li>
+          <li>
+            <Link to="/contact">Contact</Link>
+          </li>
+        </ul>
+      </nav>
+
+      <Outlet />
+    </>
+  )
+};
+
+export default Layout;
+------------------------------------------
+3개의 영역으로 나누고 App.css에 디자인 처리
+import React from 'react';
+import './App.css'; // 스타일 파일
+function App() {
+  return (
+    <div className="container">
+      <header className="header">헤더</header>
+      <main className="main">본문</main>
+      <footer className="footer">푸터</footer>
+    </div>
+  );
+}
+
+아래와 같이 스위치 사용
+import React from "react";
+import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
+
+// 페이지 컴포넌트들
+import Home from "./pages/Home";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+
+// App 컴포넌트
+function App() {
+  return (
+    <Router>
+      <div className="container">
+        <header className="header">헤더</header>
+        <main className="main">
+          <Switch>
+            <Route path="/" exact component={Home} />
+            <Route path="/about" component={About} />
+            <Route path="/contact" component={Contact} />
+          </Switch>
+        </main>
+        <footer className="footer">푸터</footer>
+      </div>
+    </Router>
+  );
+}
+
+export default App;
+
+
+----index.js
+import App from "./App"
+import ReactDOM from "react-dom/client";
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
