@@ -1,0 +1,166 @@
+1.vmware설치
+
+2.운영체제(윈도우, 맥, 유닉스, 리눅스)
+리눅스 계열(레드헷,데비안)
+데비안 대표리눅스 : ubuntu
+레드헷 대표리눅스 : RHEL(레드햇, centos)
+구분하는 이유: 패키지설치방법
+
+3.리눅스 계열별 패키지 설치방법
+데비안 계열 : ubuntu 
+sudo apt update
+sudo apt install <패키지 이름>
+sudo apt remove <패키지 이름>
+
+레드헷 계열(aws amazon linux)
+sudo yum check-update
+sudo yum install <패키지 이름>
+sudo yum remove <패키지 이름>
+
+4.ubuntu설치(vmware)
+참고사항)WSL, docker, aws cloud ....
+운영체제 다운로드:ubuntu.com
+설치시 id:user, password:1234 기억
+프로그램 업데이트 체크해제
+
+ssh서버 설치 및 실행
+sudo apt install openssh-server
+service ssh start
+
+윈도우 콘솔창에서 접속하기
+ssh user@192.168.xx.xx
+
+파일질라클라이언트 프로그램 다운로드 후 설치
+접속주소, 유저명, 패스워드, 포트번호 22입력 후 연결 파일 다운로드
+
+ssh-keygen을 접속하기
+이전까지는 user계정의 비밀번호 1234로 접속을 했지만 이제부터는 sshkeygen을 이용하여 접속하는 설정
+개발PC에서 공개키와 개인키를 발급을 받아야함
+윈도우 콘솔에서 발급
+C:\Users\admin>dir .ssh
+
+.ssh폴더가 존재하면 기존 폴더는 삭제
+C:\Users\admin>del /S .ssh
+
+클라언트(개발자PC)에서 키발급
+C:\Users\admin>ssh-keygen -t rsa -b 2048
+계속엔터키입력하면 발급
+
+폴더 이동후 파일 확인
+C:\Users\admin>cd .ssh
+C:\Users\admin>dir
+id_rsa 파일(개인키)
+id_rsa.pub 파일(공개키)
+클라이언트는 어떤키를 들고 있어야할까?개인키
+공개키는 서버(배포리눅스)에 전송
+
+공개키를 서버에 전송하는 방법?
+C:\Users\admin\.ssh>
+scp id_rsa.pub user@192.168.21.128:/home/user/
+
+-서버에서 ssh-keygen사용할 수 있도록 공개키 설정
+sudo nano /etc/ssh/sshd_config
+파일에서 아래사항을 수정(주석제거/공개키위치설정)
+PubkeyAuthentication yes
+AuthorizedKeysFile .ssh/id_rsa.pub
+
+-ssh 서버를 재시작하는 다른방법
+sudo systemctl restart sshd
+
+-개인키를 이용하여 리눅스 서버에 접속해보기
+ssh -i id_rsa user@192.168.xx.xxx
+
+5.리눅스 기본명령어
+파일 및 디렉토리/압축 및 해제
+ls
+pwd
+cd
+mkdir
+rmdir
+touch a.txt
+rm -rf 폴더명/파일명
+chmod 700 startup.sh
+
+시스템 정보 및 작업관리
+service ssh status
+service ssh start
+service ssh stop
+systemctl restart sshd : 위의 서비스와 차이점은 현재 백그라운드에서 동작하는 daemon(백그라운드/서비스)프로그램
+
+네트워크
+sudo apt install net-tools
+ifconfig
+ssh -p user@192.168.xx.xx
+
+사용자 관리
+
+
+패키지관리
+sudo apt install net-tools
+
+6.자바프로그램 설치
+java -version : 설치여부 확인
+sudo apt update : apt프로그램을 업데이트
+sudo apt install openjdk-21-jre-headless
+which java : java실행파일이 어디에 있는지 확인
+whereis java : 자바관련 파일이 위치하는 경로
+find / -name java* 2>/dev/null
+echo $PATH : PATH환경변수의 내용을 확인
+update-alternatives --config java : 실제 자바설치 폴더
+실제경로를 확인하여 JAVA_HOME환경변수 설정
+/usr/lib/jvm/java-21-openjdk-amd64
+export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+echo $JAVA_HOME
+nano .profile
+source .profile : 참고사항)/ect/profile
+
+
+7.아파치 톰캣 서버설치(다운로드 받아 처리)
+wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.99/bin/apache-tomcat-9.0.99.tar.gz
+
+tar -xvzf apache-tomcat-9.0.99.tar.gz
+
+./startup.sh : 쉡스크립트 실행할 때 현재폴더에 있는 파일 실행시 반드시 ./로 시작
+
+filezila client프로그램으로 웹파일을 서버에 업로드하고 확인
+
+-----------------------------------------
+실습사항:
+1.vmware에 리눅스 설치(교육자료-프로그램폴더 확인)
+2.ssh를 사용하여 리눅스에 접속
+3.ssh를 공개키, 개인키기반에 의한 리눅스 접속
+4.자바프로그램 설치 및 환경설정
+5.톰캣서버 설치 및 확인(파일질라 ftp를 이용하여 파일 업로드)
+추가미션)파이썬을 설치하고 파이썬 실행코드 생성
+---------------------------------------
+-total_install.sh
+#!/bin/bash
+echo "프로그램 관리 프로그램 업데이트[apt]"
+sudo apt update
+
+echo "네트워크 도구 설치"
+sudo apt install net-tools
+
+echo "ssh서버 설치 및 실행"
+sudo apt install openssh-server
+sudo service ssh start
+
+echo "ssh 공개-개인키 기반 로그인 설치-ssh서버 재실행"
+# /etc/ssh/sshd_config 파일을 수정하여 PubkeyAuthentication yes와 AuthorizedKeysFile .ssh/id_rsa.pub 추가
+echo "PubkeyAuthentication yes" | sudo tee -a /etc/ssh/sshd_config > /dev/null
+echo "AuthorizedKeysFile /home/user/.ssh/id_rsa.pub" | sudo tee -a /etc/ssh/sshd_config > /dev/null
+sudo systemctl restart sshd
+
+echo "java 설치-환경변수등록"
+sudo apt install openjdk-21-jre-headless
+echo "export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64" | sudo tee -a /home/user/.profile > /dev/null
+source .profile
+
+#현재의 경로는 /home/user/apache-tomcat-9.0.99.tar.gz
+echo "apache-tomcat 서버 설치 및 서버실행"
+wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.99/bin/apache-tomcat-9.0.99.tar.gz
+tar -xvzf apache-tomcat-9.0.99.tar.gz
+rm -rf apache*.tar.gz
+mv apache-tomcat-9.0.99 apache
+chmod 755 /home/user/apache/bin/startup.sh
+./apache/bin/startup.sh
