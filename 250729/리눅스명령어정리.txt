@@ -1,0 +1,114 @@
+#환경변수
+env :환경변수 전체 확인
+echo $SHELL : 변수중에 SHELL값을 확인
+echo "hello message" > /dev/pts/1 : echo는 화면출력이지만 > 데이터흐름이 이동하여 /dev/pts/1 터미널로 문자 이동
+
+#파일생성
+0:표준입력, 1:표준출력, 2:표준에러
+cat > a.txt :콘솔에 키보드를 입력하고 enter ->ctrl+c
+cat b.txt 2> error.txt : b.txt를 화면에 출력하고 2>는 표준에러가 발생하면 error.txt로 데이터를 보낸다.
+2>는 띄워쓰기 안됨.
+
+cat : 파일
+echo : 화면문자열 출력
+touch a.txt b.txt c.txt
+cat >> a.txt
+
+#명령을 통한 출력
+ls  > a.txt
+cat a.txt > b.txt > c.txt 
+: b.txt안에는 아무 코드가 없으며 최종 c.txt에 결과가 입력이 됨.
+
+#console입력
+read -p "your name?" name
+echo $name
+
+;를 이용하여 여러줄을 한번에 실행
+read -p "your name? " name ; echo $name
+env :전역환경변수
+set : 지역환경변수
+name=kim
+unset name
+
+#시스템관련명령
+ps -ef : pid확인
+top
+apt install xterm
+xterm &
+apt install gnome-terminal
+gnome-terminal &
+kill -9 pid번호 :프로세스 강제 해제
+df, du, free
+
+#파일관련사항
+pwd
+ls
+cd
+mkdir
+rmdir
+touch
+rm -rf : 파일삭제지만 -rf옵션을이용하면 하위 디렉토까지 모두 삭제
+cp : 파일 복사
+mv :파일이동, mv를 이용하여  파일  rename
+ln -s 링크경로 :바로가기: 
+
+#찾기 명령
+grep
+find / -name 찾는파일명 2>/dev/null
+
+#네트워크 관련 명령
+ifconfig
+ufw(iptables) : ufw allow 22/tcp
+iptables [테이블] [체인] [옵션] [규칙]
+iptables -A INPUT -p tcp --dport 22 -j ACCEPT[DROP]
+INPUT/FORWARD/OUTPUT
+
+netstat : 네트워크 상태 확인
+nslookup : 도메인확인(apt install dnsutils)
+nslookup naver.com
+#사용자관리
+su - ubuntu (su : switch user)
+
+user add user1 : 문제는 /home/user1폴더생성안됨
+user add -m user2 : 폴더생성옵션
+
+/home에서 root가 user1폴더를 만들었을 때 사용자와 그룹을 root가 아닌 user1으로 변경하는 방법은?
+chown user1:user1 /home/user1
+
+/etc/passwd구조
+사용자이름:비밀번호:UID:GID   :설명:홈디렉토리:로그인셸
+root        :x          :0   :0      :root:/root       :/bin/bash
+user2       :x          :1002:1002:     :/home/user2:/bin/sh
+
+그룹만들기:sudo groupadd 그룹이름
+
+그룹확인:cat /etc/group
+
+그룹비밀번호:sudo gpasswd 그룹이름
+
+여러그룹가입/사용자그룹등록
+sudo usermod -aG 그룹1,그룹2 사용자이름
+
+그룹삭제 : groupdel 그룹이름
+사용자 그룹에서 해제:gpasswd -d 사용자이름 그룹이름
+
+#프로그램 다운로드
+wget,curl -O,ftp ....
+wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.88/bin/apache-tomcat-9.0.88.tar.gz
+
+#압축해제
+tar xvzf, unzip .....
+sudo apt install gzip
+gzip -d 압축해제파일명 : 압축해제
+gzip 파일명 : 압축명령
+
+tar xvf 파일명 : 압축해제
+tar cvf 파일명 : 압축하기
+
+tar xvzf 파일명 : gzip, tar를 같이 해제하는 명령
+
+---------
+내일 : 스크립트 관련 명령 vi edit
+과제:
+설치한 프로그램 : net-tools, java, ssh server, tocmat 위의 파일을 awslinux를 docker설치하고 프로그램을 설치하시오.
+apt -> yum(패키지 관리 도구)
