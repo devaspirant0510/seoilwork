@@ -106,9 +106,3 @@ tar xvf 파일명 : 압축해제
 tar cvf 파일명 : 압축하기
 
 tar xvzf 파일명 : gzip, tar를 같이 해제하는 명령
-
----------
-내일 : 스크립트 관련 명령 vi edit
-과제:
-설치한 프로그램 : net-tools, java, ssh server, tocmat 위의 파일을 awslinux를 docker설치하고 프로그램을 설치하시오.
-apt -> yum(패키지 관리 도구)
