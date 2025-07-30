@@ -1,0 +1,26 @@
+#ex.txt
+A few moments after his daughter announced her engagement,
+the father questioned, “Does this fellow have any money?”
+“Oh, you men are all alike,” the girl snappped.
+“What do you mean?” her father wanted to know.
+“Well,” said the daughter,
+“Well,” said the daughter,
+“that’s just what he wanted to know about you.”
+
+참고사항
+줄바꿈이 되어 있는지 확인-> esc->set list->확인 후 ->set nolist
+dw단어 삭제
+
+1. 5번째 줄 모두를 삭제하시오.
+esc키 -> 5G -> dd
+2. vi 편집기에서 라인 번호를 볼 수 있도록 환경 설정을 저장하시오.
+:set nu
+
+3. 3번째 줄에 있는 snappped라는 단어를 snapped로 바꾸어 보자.
+단어삭제 :cw
+커서 이동 후 cw -> snapped
+
+4. 6번째 줄에 있는 문장 모두를 대문자로 변환하시오.
+6G -> r 대문자변환
+
+dd(cc)줄을 삭제하고 다시 문자 입력하는 방법
