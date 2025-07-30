@@ -1,4 +1,49 @@
-#ex1.txt
+#에디터 종류
+vi, vim, nano( apt update && apt install -y nano)
+nano a.txt(파일생성)
+nano editor 단축키 검색확인(ctrl+key값)
+나가기 : ctrl+x, y, enter
+
+#vi editor설치
+vim은 vi의 향상된 에디터
+apt update && apt install -y vim
+
+#vi 에디터의 모드
+명령 모드(ESC) : 단축키로 복사, 삭제, 이동등의 명령 수행
+입력 모드(a, i) : 텍스트를 입력할 수 있는 상태
+명령줄 모드(esc : ): esc(명령모드에서) :입력 후 명령어(w, q, !) 입력
+
+vim b.txt
+(esc)(:)wq!
+
+명령모드일 때 단축키 검색
+yy:현재줄 복사
+p:붙여넣기
+dd:현재줄 삭제
+^:최고 앞
+$:최고 뒤
+명령은 대문자와 소문자를 구분한다.
+
+w:단어이동(반대 b)
+x,u : 한글자지우기, 복원하기
+dw: 삭제+단어
+2yy:현재커서를 기준으로 2줄을 복사(p:붙여넣기)
+/ : 찾기명령
+
+모두 찾기
+:set hlsearch (반대표현:set nohlsearch)
+/git
+
+:%s/git/github : 문자열 git글자를 github로 변경
+:%s/git/github/ig : i는 대소문자 구분x, g전체글자 모두변경
+
+:set nu
+
+명령모드에서 줄로 바로 이동
+:을 사용하지 않고  6G를 실행하면 6번째 줄로 이동
+
+#예제파일
+vim ex1.txt
 A few moments after his daughter announced her engagement,
 the father questioned, “Does this fellow have any money?”
 “Oh, you men are all alike,” the girl snappped.
@@ -7,12 +52,17 @@ the father questioned, “Does this fellow have any money?”
 “Well,” said the daughter,
 “that’s just what he wanted to know about you.”
 
+#encoding문제 해결
+:set encoding=utf-8
+code종류:ansi, cp949,euc-kr
+
 참고사항
-줄바꿈이 되어 있는지 확인-> esc->set list->확인 후 ->set nolist
+줄바꿈이 되어 있는지 확인-> esc->:set list->확인 후 ->set nolist
 dw단어 삭제
 
 1. 5번째 줄 모두를 삭제하시오.
 esc키 -> 5G -> dd
+
 2. vi 편집기에서 라인 번호를 볼 수 있도록 환경 설정을 저장하시오.
 :set nu
 
@@ -21,6 +71,73 @@ esc키 -> 5G -> dd
 커서 이동 후 cw -> snapped
 
 4. 6번째 줄에 있는 문장 모두를 대문자로 변환하시오.
-6G -> r 대문자변환
+esc -> 6G -> r 대문자변환
 
 dd(cc)줄을 삭제하고 다시 문자 입력하는 방법
+
+#swap파일 문제 발생시 파일삭제
+rm ex1.txt.swp
+
+##파일안에서 편집이 아닌 쉘에서 편집하는 방법
+cat :파일의 전체보는 명령
+more :조금씩 보는 것을 의미
+
+apt install tree
+cd /
+tree | more (enter, space, ctrl+c)
+tree > tree.txt
+vim tree.txt ( 한페이지씩 보는 명령 ctrl+f)
+
+head -n 3 tree.txt : 파일의 3줄 출력
+tail -n 3 tree.txt :파일 끝의 3줄 출력
+
+cmp tree.txt tree1.txt : 비교
+diff tree.txt tree1.tx : 다른부분 찾기
+comm comm1.txt comm2.txt > comm12.txt :결합
+
+sort sort.txt :파일내용정렬
+
+#정규식표현에서 사용하는 문자
+* : 모든문자
+? : 한문자
+[] :한문자또는 한문자의 범위
+{} : or
+
+ls zip[a-i]* : 4번째 글자에서 a~i까지의 문자 중 하나만 있으면 됨
+ls zip{d,i}*
+
+#문자표현
+tee
+sed
+wc : 파일의 문자관련 정보를 획득
+
+wc wc.txt
+라인수(소문자 L), 단어갯수(w), 철자수(c), 파일명 이 출력
+wc -l wc.txt
+wc -w wc.txt
+wc -c wc.txt
+ls | wc -w
+
+awk : 
+apt install original-awk
+awk '{print $0}' awkfile : $0 전체출력
+awk '{print $1}' awkfile : $1 첫번째 줄
+awk '{print $2,$4}' awkfile : $2 두번째 줄, $4 네번줄 출력
+
+문제)5번째는 전화번호라고 가정할 경우, 단체전화를 보내기 위한 메시지를 작성하려고 합니다.
+문장은 다음과 같습니다.
+xxx님 오늘 이벤트는 다음과 같습니다.
+
+"전화번호 xxx님 오늘 이벤트는 다음과 같습니다."
+"$5 $1,$2님 오늘 이벤트는 다음과 같습니다."
+
+awk {print  $5," ",$1,$2,"님 오늘 이벤트는 다음과 같습니다."}
+
+awk '{print  $5," ",$1,$2,"sir, today is event  next."}' awkfile > avert.txt
+
+주의 : 문자열 작성시 '{}'
+
+
+
+
+
