@@ -1,0 +1,79 @@
+#github action동작 과정
+github에서 저장소 만들기
+로컬저장소를 clone (git branch 확인)
+github에서 workflows yml파일 작성
+로컬저장소에서 pull (git branch 확인)
+로컬저장소에서 파일을 만들고
+git add, git commit, git push
+github에서 action이 동작되었는지 확인
+
+##학습할 사항
+yml문법확인
+yml에서 ssh를 사용하는 방법(리눅스)
+
+#문제
+Main클래스를 작성하고 main함수에 hello java를 출력하는 프로그램을 작성한 후 로컬저장소에서 github원격저장소로 push할 경우 Main.java에 대한 Main.class를 자동생성하는 git action을 작성하시오.
+
+1)로컬저장소에서 Main.java 생성
+copy con Main.java
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello from GitHub Actions!");
+    }
+}
+
+2)저장소/.github/workflows/main.yml 수정
+설명:main branch가 push될 때(on) jobs가 동작한다.
+jobs밑에 build-java는 내 마음대로 이름을 설정가능
+리눅스 운영체제(ubuntu-latest)에서 동작(runs-on)
+steps는 동작순서를 의미하며 각각의 step이 동작이 됨
+
+name: Compile Java
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-java:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Compile Main.java
+        run: |
+          javac Main.java
+          ls -l
+
+      - name: Check if Main.class was created
+        run: |
+          if [ -f Main.class ]; then
+            echo "✅ Compilation successful: Main.class created."
+          else
+            echo "❌ Compilation failed: Main.class not found."
+            exit 1
+          fi
+
+      - name: Upload Main.class as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: compiled-class
+          path: Main.class
+
+git add .
+git commit -m "java file upload"
+git push origin main
+오류발생확인
+
+다시 로컬저장소에서 main.yml수정 후 push진행
+오류사항을 학인
+      - name: Upload Main.class as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: compiled-class
+          path: Main.class
+
+
+
